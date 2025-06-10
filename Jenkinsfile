@@ -36,6 +36,14 @@ spec:
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
+    - name: kubectl
+      image: bitnami/kubectl:latest
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
   volumes:
     - name: docker-graph-storage
       emptyDir: {}
@@ -45,13 +53,15 @@ spec:
 """
         }
     }
+
     environment {
         DOCKER_IMAGE = 'kaido19/hello-world:latest'
     }
+
     stages {
         stage('Checkout') {
             steps {
-                git url: 'https://github.com/Humberto89/prueba-sre.git', credentialsId: 'github-creds'
+                git branch: 'main', url: 'https://github.com/Humberto89/prueba-sre.git', credentialsId: 'github-creds'
             }
         }
 
