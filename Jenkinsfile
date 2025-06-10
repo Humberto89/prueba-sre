@@ -68,7 +68,8 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    sh 'docker version'
+                    sh 'chmod +x wait-for-dind.sh'
+                    sh './wait-for-dind.sh'
                     sh "docker build -t $DOCKER_IMAGE ."
                 }
             }
