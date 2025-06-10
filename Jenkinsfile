@@ -26,7 +26,7 @@ spec:
           mountPath: /var/lib/docker
         - name: workspace-volume
           mountPath: /home/jenkins/agent
-    - name: dind
+    - name: docker-dind
       image: docker:24.0.2-dind
       securityContext:
         privileged: true
@@ -61,7 +61,7 @@ spec:
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/Humberto89/prueba-sre.git', credentialsId: 'github-creds'
+                git url: 'https://github.com/Humberto89/prueba-sre.git', branch: 'main', credentialsId: 'github-creds'
             }
         }
 
@@ -88,7 +88,8 @@ spec:
         stage('Deploy Resources') {
             steps {
                 container('kubectl') {
-                    sh 'kubectl apply -f k8s/deployment.yaml'
+                    sh 'kubectl apply -f microservice/hello-world/deployment.yaml -n dev'
+                    sh 'kubectl apply -f microservice/hello-world/service.yaml -n dev'
                 }
             }
         }
@@ -96,7 +97,7 @@ spec:
         stage('Deploy to EKS') {
             steps {
                 container('kubectl') {
-                    sh 'kubectl rollout status deployment hello-world'
+                    sh 'kubectl rollout status deployment/hello-world -n dev'
                 }
             }
         }
