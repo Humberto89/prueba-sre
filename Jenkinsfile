@@ -70,7 +70,7 @@ spec:
                 container('docker') {
                     sh 'chmod +x wait-for-dind.sh'
                     sh './wait-for-dind.sh'
-                    sh "docker build -t $DOCKER_IMAGE ."
+                    sh "docker build -t $DOCKER_IMAGE microservice/hello-world"
                 }
             }
         }
