@@ -1,12 +1,12 @@
 pipeline {
-  agent {
-    kubernetes {
-      yaml """
+    agent {
+        kubernetes {
+            yaml """
 apiVersion: v1
 kind: Pod
 metadata:
   labels:
-    jenkins: agent
+    jenkins: slave
 spec:
   containers:
     - name: docker
@@ -14,64 +14,81 @@ spec:
       command:
         - cat
       tty: true
-    - name: kubectl
-      image: bitnami/kubectl:latest
-      command:
-        - cat
-      tty: true
-    - name: jnlp
-      image: jenkins/inbound-agent:latest
+      securityContext:
+        privileged: true
+      env:
+        - name: DOCKER_HOST
+          value: tcp://localhost:2375
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+      volumeMounts:
+        - name: docker-graph-storage
+          mountPath: /var/lib/docker
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+    - name: dind
+      image: docker:24.0.2-dind
+      securityContext:
+        privileged: true
+      env:
+        - name: DOCKER_TLS_CERTDIR
+          value: ""
+      volumeMounts:
+        - name: docker-graph-storage
+          mountPath: /var/lib/docker
+  volumes:
+    - name: docker-graph-storage
+      emptyDir: {}
+    - name: workspace-volume
+      emptyDir: {}
+  restartPolicy: Never
 """
-      defaultContainer 'jnlp'
-    }
-  }
-
-  environment {
-    DOCKERHUB_USER = "kaido19"
-    IMAGE_NAME = "hello-world"
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        git branch: 'main', credentialsId: 'github-creds', url: 'https://github.com/Humberto89/prueba-sre.git'
-      }
-    }
-
-    stage('Build Docker Image') {
-      steps {
-        container('docker') {
-          sh 'docker build -t $DOCKERHUB_USER/$IMAGE_NAME:latest .'
         }
-      }
     }
-
-    stage('Push Docker Image') {
-      steps {
-        container('docker') {
-          withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-            sh 'echo $PASS | docker login -u $USER --password-stdin'
-            sh 'docker push $DOCKERHUB_USER/$IMAGE_NAME:latest'
-          }
+    environment {
+        DOCKER_IMAGE = 'kaido19/hello-world:latest'
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                git url: 'https://github.com/Humberto89/prueba-sre.git', credentialsId: 'github-creds'
+            }
         }
-      }
-    }
 
-    stage('Deploy Resources') {
-      steps {
-        container('kubectl') {
-          sh 'kubectl apply -f microservice/hello-world/deployment.yaml -n dev'
-          sh 'kubectl apply -f microservice/hello-world/service.yaml -n dev'
+        stage('Build Docker Image') {
+            steps {
+                container('docker') {
+                    sh 'docker version'
+                    sh "docker build -t $DOCKER_IMAGE ."
+                }
+            }
         }
-      }
-    }
 
-    stage('Deploy to EKS') {
-      steps {
-        container('kubectl') {
-          sh 'kubectl set image deployment/hello-world hello-world=$DOCKERHUB_USER/$IMAGE_NAME:latest -n dev'
+        stage('Push Docker Image') {
+            steps {
+                container('docker') {
+                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                        sh "docker push $DOCKER_IMAGE"
+                    }
+                }
+            }
         }
-      }
+
+        stage('Deploy Resources') {
+            steps {
+                container('kubectl') {
+                    sh 'kubectl apply -f k8s/deployment.yaml'
+                }
+            }
+        }
+
+        stage('Deploy to EKS') {
+            steps {
+                container('kubectl') {
+                    sh 'kubectl rollout status deployment hello-world'
+                }
+            }
+        }
     }
-  }
 }
