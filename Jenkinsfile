@@ -37,7 +37,7 @@ spec:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
     - name: kubectl
-      image: lachlanevenson/k8s-kubectl:v1.27.4
+      image: image: bitnami/kubectl:1.27
       command:
         - cat
       tty: true
