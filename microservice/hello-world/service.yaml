@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: hello-world-svc
   namespace: dev
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "external"
 spec:
   selector:
     app: hello-world
