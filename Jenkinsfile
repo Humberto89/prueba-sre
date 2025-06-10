@@ -86,6 +86,38 @@ spec:
             }
         }
 
+        stage('Configure Kube Access') {
+            steps {
+                container('kubectl') {
+                    withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
+                        sh '''
+                            mkdir -p ~/.kube
+                            cat <<EOF > ~/.kube/config
+apiVersion: v1
+kind: Config
+clusters:
+- name: eks-cluster
+  cluster:
+    server: https://kubernetes.default.svc
+    insecure-skip-tls-verify: true
+contexts:
+- name: jenkins-context
+  context:
+    cluster: eks-cluster
+    user: jenkins
+    namespace: cicd
+current-context: jenkins-context
+users:
+- name: jenkins
+  user:
+    token: $K8S_TOKEN
+EOF
+                        '''
+                    }
+                }
+            }
+        }
+
         stage('Deploy Resources') {
             steps {
                 container('kubectl') {
