@@ -39,7 +39,7 @@ spec:
           mountPath: /home/jenkins/agent
 
     - name: kubectl
-      image: bitnami/kubectl:1.27.4
+      image: mesosphere/aws-cli
       command: ["sh", "-c", "yum install -y ca-certificates && update-ca-trust && cat"]
       tty: true
       stdin: true
