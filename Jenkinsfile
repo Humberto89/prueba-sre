@@ -38,10 +38,14 @@ spec:
           mountPath: /var/lib/docker
 
     - name: kubectl
-      image: bitnami/kubectl:latest
+      image: bitnami/kubectl:1.27.4
       command: ["/bin/sh"]
       args: ["-c", "sleep 3600"]
       tty: true
+      resources:
+        requests:
+          cpu: "100m"
+          memory: "128Mi"
       volumeMounts:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
@@ -61,7 +65,6 @@ spec:
     }
 
     stages {
-
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/Humberto89/prueba-sre.git', branch: 'main', credentialsId: 'github-creds'
@@ -94,9 +97,8 @@ spec:
                 container('kubectl') {
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
                         sh '''
-mkdir -p ~/.kube
-
-cat <<-'EOF' > ~/.kube/config
+                            mkdir -p ~/.kube
+                            cat <<EOF > ~/.kube/config
 apiVersion: v1
 kind: Config
 clusters:
@@ -114,9 +116,9 @@ current-context: jenkins-context
 users:
 - name: jenkins
   user:
-    token: '${K8S_TOKEN}'
+    token: ${K8S_TOKEN}
 EOF
-'''
+                        '''
                     }
                 }
             }
