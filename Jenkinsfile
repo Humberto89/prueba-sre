@@ -38,14 +38,10 @@ spec:
           mountPath: /var/lib/docker
 
     - name: kubectl
-      image: bitnami/kubectl:1.27.4
+      image: lachlanevenson/k8s-kubectl:v1.27.4
       command: ["cat"]
       tty: true
       stdin: true
-      resources:
-        requests:
-          cpu: "100m"
-          memory: "128Mi"
       volumeMounts:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
