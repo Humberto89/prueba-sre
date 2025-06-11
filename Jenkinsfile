@@ -26,6 +26,7 @@ spec:
           mountPath: /var/lib/docker
         - name: workspace-volume
           mountPath: /home/jenkins/agent
+
     - name: docker-dind
       image: docker:24.0.2-dind
       securityContext:
@@ -36,14 +37,16 @@ spec:
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
+
     - name: kubectl
-      image: bitnami/kubectl:1.27
+      image: lachlanevenson/k8s-kubectl:v1.27.4
       command:
         - cat
       tty: true
       volumeMounts:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
+
   volumes:
     - name: docker-graph-storage
       emptyDir: {}
