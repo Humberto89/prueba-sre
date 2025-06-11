@@ -40,7 +40,7 @@ spec:
 
     - name: kubectl
       image: amazon/aws-cli:2.15.35
-      command: ["sh", "-c", "apk add --no-cache ca-certificates && cat"]
+      command: ["sh", "-c", "yum install -y ca-certificates && cat"]
       tty: true
       stdin: true
       volumeMounts:
