@@ -36,10 +36,12 @@ spec:
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
-      command: ["cat"]
+      command: ["/bin/bash", "-c", "sleep infinity"]
       tty: true
       stdin: true
       volumeMounts:
