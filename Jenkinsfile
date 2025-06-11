@@ -38,7 +38,7 @@ spec:
           mountPath: /var/lib/docker
 
     - name: kubectl
-      image: lachlanevenson/k8s-kubectl:v1.27.4
+      image: lachlanevenson/k8s-kubectl:v1.27.3
       command: ["cat"]
       tty: true
       stdin: true
