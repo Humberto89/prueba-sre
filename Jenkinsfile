@@ -41,10 +41,8 @@ spec:
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
-      command:
-        - /bin/sh
-        - -c
-        - cat
+      command: ['sh']
+      args: ['-c', 'cat']
       tty: true
       stdin: true
       volumeMounts:
