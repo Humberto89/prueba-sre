@@ -38,7 +38,7 @@ spec:
           mountPath: /var/lib/docker
 
     - name: kubectl
-      image: lachlanevenson/k8s-kubectl:v1.27.3
+      image: bitnami/kubectl:1.27.4-debian-11-r0
       command: ["cat"]
       tty: true
       stdin: true
