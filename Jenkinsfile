@@ -1,4 +1,9 @@
 pipeline {
+    options {
+        ansiColor('xterm')
+        timestamps()
+    }
+
     agent {
         kubernetes {
             yaml """
@@ -37,6 +42,8 @@ spec:
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
@@ -97,8 +104,11 @@ spec:
                 container('kubectl') {
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
                         sh '''
-                            mkdir -p ~/.kube
-                            cat <<EOF > ~/.kube/config
+#!/bin/sh
+set -e
+echo "✅ INICIANDO CONFIG DE KUBECONFIG"
+mkdir -p ~/.kube
+cat <<EOF > ~/.kube/config
 apiVersion: v1
 kind: Config
 clusters:
@@ -118,7 +128,7 @@ users:
   user:
     token: $K8S_TOKEN
 EOF
-                        '''
+'''
                     }
                 }
             }
