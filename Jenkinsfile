@@ -39,10 +39,17 @@ spec:
           mountPath: /home/jenkins/agent
 
     - name: kubectl
-      image: mesosphere/aws-cli
-      command: ["sh", "-c", "yum install -y ca-certificates && update-ca-trust && cat"]
+      image: bitnami/kubectl:latest
+      command: ["cat"]
       tty: true
-      stdin: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+
+    - name: awscli
+      image: amazon/aws-cli:2.15.35
+      command: ["cat"]
+      tty: true
       volumeMounts:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
@@ -92,7 +99,7 @@ spec:
 
         stage('Configure Kube Access') {
             steps {
-                container('kubectl') {
+                container('awscli') {
                     withCredentials([
                         usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
                         string(credentialsId: 'k8s-api-url', variable: 'K8S_API_URL'),
@@ -108,9 +115,6 @@ spec:
                                 --alias "$K8S_CLUSTER_NAME" \
                                 --kubeconfig /tmp/kubeconfig \
                                 --endpoint-url "$K8S_API_URL"
-
-                            export KUBECONFIG=/tmp/kubeconfig
-                            kubectl version --short
                         '''
                     }
                 }
