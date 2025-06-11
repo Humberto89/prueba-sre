@@ -38,7 +38,7 @@ spec:
           mountPath: /var/lib/docker
 
     - name: kubectl
-      image: bitnami/kubectl:1.27.4-debian-11-r0
+      image: bitnami/kubectl:latest
       command: ["/bin/sh"]
       args: ["-c", "sleep 3600"]
       tty: true
@@ -93,8 +93,9 @@ spec:
             steps {
                 container('kubectl') {
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
-                        sh 'mkdir -p ~/.kube'
-                        sh '''cat <<EOF > ~/.kube/config
+                        sh """
+                        mkdir -p ~/.kube
+                        cat <<EOF > ~/.kube/config
 apiVersion: v1
 kind: Config
 clusters:
@@ -112,9 +113,9 @@ current-context: jenkins-context
 users:
 - name: jenkins
   user:
-    token: ${K8S_TOKEN}
+    token: $K8S_TOKEN
 EOF
-'''
+                        """
                     }
                 }
             }
