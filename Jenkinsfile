@@ -39,9 +39,8 @@ spec:
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4
-      command: ["/bin/sh"]
-      args: ["-c", "sleep 3600"]
       tty: true
+      stdin: true
       resources:
         requests:
           cpu: "100m"
