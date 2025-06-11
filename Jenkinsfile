@@ -97,7 +97,7 @@ spec:
         stage('Configure Kube Access') {
             steps {
                 container('kubectl') {
-                    withCredentials([string(credentialsId: 'eks-kube-token', variable: 'K8S_TOKEN')]) {
+                    withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
                         sh 'echo "$K8S_TOKEN" > /tmp/kubeconfig'
                         sh 'export KUBECONFIG=/tmp/kubeconfig'
                         sh 'kubectl version --client'
