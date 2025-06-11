@@ -10,8 +10,7 @@ spec:
   containers:
     - name: docker
       image: docker:24.0.2
-      command:
-        - cat
+      command: ["cat"]
       tty: true
       securityContext:
         privileged: true
@@ -41,8 +40,7 @@ spec:
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
-      command: ['sh']
-      args: ['-c', 'cat']
+      command: ["sh", "-c", "cat"]
       tty: true
       stdin: true
       volumeMounts:
@@ -95,10 +93,22 @@ spec:
         stage('Configure Kube Access') {
             steps {
                 container('kubectl') {
-                    withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
-                        sh 'echo "$K8S_TOKEN" > /tmp/kubeconfig'
-                        sh 'export KUBECONFIG=/tmp/kubeconfig'
-                        sh 'kubectl version --client'
+                    withCredentials([
+                        string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN'),
+                        string(credentialsId: 'k8s-api-url', variable: 'K8S_API_URL'),
+                        string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
+                    ]) {
+                        sh '''
+                            aws eks update-kubeconfig \
+                                --region us-east-1 \
+                                --name "$K8S_CLUSTER_NAME" \
+                                --alias "$K8S_CLUSTER_NAME" \
+                                --kubeconfig /tmp/kubeconfig \
+                                --endpoint-url "$K8S_API_URL"
+
+                            export KUBECONFIG=/tmp/kubeconfig
+                            kubectl version --short
+                        '''
                     }
                 }
             }
