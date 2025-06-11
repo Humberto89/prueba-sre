@@ -1,13 +1,11 @@
 pipeline {
     agent {
         kubernetes {
-            label 'hello-world-pipeline'
+            label "hello-world-pipeline"
+            defaultContainer 'jnlp'
             yaml """
 apiVersion: v1
 kind: Pod
-metadata:
-  labels:
-    some-label: hello-world-pipeline
 spec:
   containers:
     - name: docker
@@ -15,18 +13,18 @@ spec:
       command:
         - cat
       tty: true
+      securityContext:
+        privileged: true
       env:
         - name: DOCKER_HOST
           value: tcp://localhost:2375
         - name: DOCKER_TLS_CERTDIR
           value: ""
-      securityContext:
-        privileged: true
       volumeMounts:
-        - mountPath: /var/lib/docker
-          name: docker-graph-storage
-        - mountPath: /home/jenkins/agent
-          name: workspace-volume
+        - name: docker-graph-storage
+          mountPath: /var/lib/docker
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
 
     - name: docker-dind
       image: docker:24.0.2-dind
@@ -36,10 +34,10 @@ spec:
         - name: DOCKER_TLS_CERTDIR
           value: ""
       volumeMounts:
-        - mountPath: /var/lib/docker
-          name: docker-graph-storage
-        - mountPath: /home/jenkins/agent
-          name: workspace-volume
+        - name: docker-graph-storage
+          mountPath: /var/lib/docker
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
@@ -50,8 +48,8 @@ spec:
       tty: true
       stdin: true
       volumeMounts:
-        - mountPath: /home/jenkins/agent
-          name: workspace-volume
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
 
   volumes:
     - name: docker-graph-storage
@@ -63,13 +61,15 @@ spec:
     }
 
     environment {
-        DOCKER_IMAGE = "kaido19/hello-world:latest"
+        IMAGE_NAME = 'kaido19/hello-world:latest'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git credentialsId: 'github-creds', url: 'https://github.com/Humberto89/prueba-sre.git'
+                git branch: 'main',
+                    url: 'https://github.com/Humberto89/prueba-sre.git',
+                    credentialsId: 'github-creds'
             }
         }
 
@@ -78,7 +78,7 @@ spec:
                 container('docker') {
                     sh 'chmod +x wait-for-dind.sh'
                     sh './wait-for-dind.sh'
-                    sh "docker build -t ${DOCKER_IMAGE} microservice/hello-world"
+                    sh "docker build -t ${env.IMAGE_NAME} microservice/hello-world"
                 }
             }
         }
@@ -87,8 +87,8 @@ spec:
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo ${DOCKER_PASS} | docker login -u ${DOCKER_USER} --password-stdin"
-                        sh "docker push ${DOCKER_IMAGE}"
+                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                        sh "docker push ${env.IMAGE_NAME}"
                     }
                 }
             }
@@ -97,30 +97,10 @@ spec:
         stage('Configure Kube Access') {
             steps {
                 container('kubectl') {
-                    withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
-                        sh '''
-                        mkdir -p $HOME/.kube
-                        echo "
-apiVersion: v1
-clusters:
-- cluster:
-    server: https://<your-cluster-endpoint>
-    insecure-skip-tls-verify: true
-  name: my-cluster
-contexts:
-- context:
-    cluster: my-cluster
-    user: jenkins
-  name: jenkins-context
-current-context: jenkins-context
-kind: Config
-preferences: {}
-users:
-- name: jenkins
-  user:
-    token: ${K8S_TOKEN}
-" > $HOME/.kube/config
-                        '''
+                    withCredentials([string(credentialsId: 'eks-kube-token', variable: 'K8S_TOKEN')]) {
+                        sh 'echo "$K8S_TOKEN" > /tmp/kubeconfig'
+                        sh 'export KUBECONFIG=/tmp/kubeconfig'
+                        sh 'kubectl version --client'
                     }
                 }
             }
@@ -129,14 +109,24 @@ users:
         stage('Deploy Resources') {
             steps {
                 container('kubectl') {
-                    sh "kubectl apply -f k8s/deployment.yaml"
+                    sh '''
+                        export KUBECONFIG=/tmp/kubeconfig
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                    '''
                 }
             }
         }
 
         stage('Deploy to EKS') {
             steps {
-                echo "Aquí iría el paso si conectaras con EKS productivo o regional"
+                container('kubectl') {
+                    sh '''
+                        export KUBECONFIG=/tmp/kubeconfig
+                        kubectl rollout status deployment/hello-world
+                        kubectl get all
+                    '''
+                }
             }
         }
     }
