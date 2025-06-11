@@ -41,10 +41,10 @@ spec:
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
       command:
-        - /bin/bash
+        - /bin/sh
       args:
         - -c
-        - cat
+        - sleep 3600
       tty: true
       volumeMounts:
         - name: workspace-volume
