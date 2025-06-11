@@ -61,6 +61,7 @@ spec:
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/Humberto89/prueba-sre.git', branch: 'main', credentialsId: 'github-creds'
@@ -93,8 +94,7 @@ spec:
                 container('kubectl') {
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
                         script {
-                            def kubeConfig = """
-apiVersion: v1
+                            def kubeConfigContent = '''apiVersion: v1
 kind: Config
 clusters:
 - name: eks-cluster
@@ -111,15 +111,16 @@ current-context: jenkins-context
 users:
 - name: jenkins
   user:
-    token: ${K8S_TOKEN}
-"""
-                            writeFile file: '.kubeconfig', text: kubeConfig
-                            sh '''
-                                echo "✅ INICIANDO CONFIG DE KUBECONFIG"
-                                mkdir -p ~/.kube
-                                cp .kubeconfig ~/.kube/config
-                            '''
+    token: ''' + K8S_TOKEN + '\n'
+
+                            writeFile file: '.kubeconfig', text: kubeConfigContent
                         }
+
+                        sh '''
+                            echo "✅ INICIANDO CONFIG DE KUBECONFIG"
+                            mkdir -p ~/.kube
+                            cp .kubeconfig ~/.kube/config
+                        '''
                     }
                 }
             }
