@@ -39,6 +39,7 @@ spec:
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4
+      command: ["cat"]
       tty: true
       stdin: true
       resources:
