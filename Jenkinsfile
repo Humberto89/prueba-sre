@@ -1,8 +1,4 @@
 pipeline {
-    options {
-        timestamps()
-    }
-
     agent {
         kubernetes {
             yaml """
@@ -15,8 +11,7 @@ spec:
   containers:
     - name: docker
       image: docker:24.0.2
-      command:
-        - cat
+      command: ['cat']
       tty: true
       securityContext:
         privileged: true
@@ -41,16 +36,11 @@ spec:
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
-      command:
-        - /bin/sh
-      args:
-        - -c
-        - sleep 3600
+      command: ["/bin/sh"]
+      args: ["-c", "sleep 3600"]
       tty: true
       volumeMounts:
         - name: workspace-volume
@@ -71,6 +61,7 @@ spec:
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git url: 'https://github.com/Humberto89/prueba-sre.git', branch: 'main', credentialsId: 'github-creds'
@@ -103,12 +94,9 @@ spec:
                 container('kubectl') {
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
                         sh '''
-#!/bin/sh
-set -e
-echo "✅ INICIANDO CONFIG DE KUBECONFIG"
-mkdir -p ~/.kube
-cat <<EOF > ~/.kube/config
-apiVersion: v1
+                            echo "✅ INICIANDO CONFIG DE KUBECONFIG"
+                            mkdir -p ~/.kube
+                            echo "apiVersion: v1
 kind: Config
 clusters:
 - name: eks-cluster
@@ -125,9 +113,8 @@ current-context: jenkins-context
 users:
 - name: jenkins
   user:
-    token: $K8S_TOKEN
-EOF
-'''
+    token: ${K8S_TOKEN}" > ~/.kube/config
+                        '''
                     }
                 }
             }
