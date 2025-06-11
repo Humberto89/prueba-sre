@@ -39,7 +39,7 @@ spec:
           mountPath: /home/jenkins/agent
 
     - name: kubectl
-      image: amazon/aws-cli:2.15.35
+      image: bitnami/kubectl:1.27.4
       command: ["sh", "-c", "yum install -y ca-certificates && update-ca-trust && cat"]
       tty: true
       stdin: true
