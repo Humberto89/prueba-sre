@@ -39,7 +39,7 @@ spec:
           mountPath: /var/lib/docker
 
     - name: kubectl
-      image: lachlanevenson/k8s-kubectl:v1.27
+      image: bitnami/kubectl:1.27
       command:
         - cat
       tty: true
