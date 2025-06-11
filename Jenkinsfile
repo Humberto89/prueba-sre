@@ -95,7 +95,8 @@ spec:
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
                         sh '''
 mkdir -p ~/.kube
-cat > ~/.kube/config <<EOF
+
+cat <<-'EOF' > ~/.kube/config
 apiVersion: v1
 kind: Config
 clusters:
@@ -113,7 +114,7 @@ current-context: jenkins-context
 users:
 - name: jenkins
   user:
-    token: '"'"'$K8S_TOKEN'"'"'
+    token: '${K8S_TOKEN}'
 EOF
 '''
                     }
