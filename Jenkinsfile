@@ -36,6 +36,8 @@ spec:
       volumeMounts:
         - name: docker-graph-storage
           mountPath: /var/lib/docker
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
 
     - name: kubectl
       image: bitnami/kubectl:1.27.4-debian-11-r0
@@ -93,8 +95,11 @@ spec:
             steps {
                 container('kubectl') {
                     withCredentials([string(credentialsId: 'k8s-token', variable: 'K8S_TOKEN')]) {
-                        script {
-                            def kubeConfigContent = '''apiVersion: v1
+                        sh '''
+                            echo "✅ INICIANDO CONFIG DE KUBECONFIG"
+                            mkdir -p ~/.kube
+                            cat <<EOF > ~/.kube/config
+apiVersion: v1
 kind: Config
 clusters:
 - name: eks-cluster
@@ -111,15 +116,8 @@ current-context: jenkins-context
 users:
 - name: jenkins
   user:
-    token: ''' + K8S_TOKEN + '\n'
-
-                            writeFile file: '.kubeconfig', text: kubeConfigContent
-                        }
-
-                        sh '''
-                            echo "✅ INICIANDO CONFIG DE KUBECONFIG"
-                            mkdir -p ~/.kube
-                            cp .kubeconfig ~/.kube/config
+    token: $K8S_TOKEN
+EOF
                         '''
                     }
                 }
