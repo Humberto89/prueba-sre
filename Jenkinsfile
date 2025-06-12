@@ -39,7 +39,7 @@ spec:
           mountPath: /home/jenkins/agent
 
     - name: kubectl
-      image: lachlanevenson/k8s-kubectl:v1.29.0
+      image: bitnami/kubectl:1.29
       command:
         - /bin/sh
         - -c
