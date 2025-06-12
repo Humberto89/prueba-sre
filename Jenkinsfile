@@ -38,20 +38,9 @@ spec:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
 
-    - name: kubectl
-      image: bitnami/kubectl:1.29
-      command:
-        - /bin/sh
-        - -c
-        - "sleep infinity"
-      tty: true
-      volumeMounts:
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
-
-    - name: awscli
-      image: amazon/aws-cli:2.15.35
-      command: ["cat"]
+    - name: kube-aws
+      image: kaido19/kube-aws:latest
+      command: ["/bin/sh", "-c", "sleep infinity"]
       tty: true
       volumeMounts:
         - name: workspace-volume
@@ -102,7 +91,7 @@ spec:
 
         stage('Configure Kube Access') {
             steps {
-                container('awscli') {
+                container('kube-aws') {
                     withCredentials([
                         usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
                         string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
@@ -116,22 +105,18 @@ spec:
                                 --name "$K8S_CLUSTER_NAME" \
                                 --alias "$K8S_CLUSTER_NAME" \
                                 --kubeconfig /tmp/kubeconfig
+
+                            export KUBECONFIG=/tmp/kubeconfig
+                            kubectl version --short
                         '''
                     }
-                }
-
-                container('kubectl') {
-                    sh '''
-                        export KUBECONFIG=/tmp/kubeconfig
-                        kubectl version --short
-                    '''
                 }
             }
         }
 
         stage('Deploy Resources') {
             steps {
-                container('kubectl') {
+                container('kube-aws') {
                     sh '''
                         export KUBECONFIG=/tmp/kubeconfig
                         kubectl apply -f k8s/deployment.yaml
@@ -143,7 +128,7 @@ spec:
 
         stage('Deploy to EKS') {
             steps {
-                container('kubectl') {
+                container('kube-aws') {
                     sh '''
                         export KUBECONFIG=/tmp/kubeconfig
                         kubectl rollout status deployment/hello-world
