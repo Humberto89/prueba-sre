@@ -3,6 +3,7 @@ pipeline {
         kubernetes {
             label "hello-world-pipeline"
             defaultContainer 'jnlp'
+            inheritFrom 'hello-world-agent'
             yaml """
 apiVersion: v1
 kind: Pod
