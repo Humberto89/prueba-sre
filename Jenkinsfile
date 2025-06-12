@@ -7,15 +7,20 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'kaido19/hello-world:latest'
+        GIT_COMMIT_HASH = ''  // se rellenará dinámicamente
+        IMAGE_NAME = ''       // también dinámicamente
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
-                    url: 'https://github.com/Humberto89/prueba-sre.git',
-                    credentialsId: 'github-creds'
+                script {
+                    checkout([$class: 'GitSCM', branches: [[name: '*/main']],
+                              userRemoteConfigs: [[url: 'https://github.com/Humberto89/prueba-sre.git', credentialsId: 'github-creds']]])
+                    GIT_COMMIT_HASH = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    IMAGE_NAME = "kaido19/hello-world:${GIT_COMMIT_HASH}"
+                    env.IMAGE_NAME = IMAGE_NAME
+                }
             }
         }
 
@@ -39,12 +44,12 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    sh '''
+                    sh """
                         export DOCKER_HOST=tcp://localhost:2375
                         chmod +x wait-for-dind.sh
                         ./wait-for-dind.sh
                         docker build -t ${IMAGE_NAME} microservice/hello-world
-                    '''
+                    """
                 }
             }
         }
@@ -53,11 +58,11 @@ pipeline {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: 'dockercred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh '''
+                        sh """
                             export DOCKER_HOST=tcp://localhost:2375
-                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            echo \$DOCKER_PASS | docker login -u \$DOCKER_USER --password-stdin
                             docker push ${IMAGE_NAME}
-                        '''
+                        """
                     }
                 }
             }
@@ -91,11 +96,15 @@ pipeline {
         stage('Deploy Resources') {
             steps {
                 container('kube-aws') {
-                    sh '''
+                    sh """
                         export KUBECONFIG=/tmp/kubeconfig
+
+                        echo '🔄 Actualizando deployment.yaml con nueva imagen...'
+                        sed -i 's|image: .*|image: ${IMAGE_NAME}|' microservice/hello-world/deployment.yaml
+
                         kubectl apply -f microservice/hello-world/deployment.yaml -n dev
                         kubectl apply -f microservice/hello-world/service.yaml -n dev
-                    '''
+                    """
                 }
             }
         }
