@@ -90,29 +90,30 @@ spec:
         }
 
         stage('Configure Kube Access') {
-            steps {
-                container('kube-aws') {
-                    withCredentials([
-                        usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                        string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
-                    ]) {
-                        sh '''
-                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+    steps {
+        container('kube-aws') {
+            withCredentials([
+                usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
+            ]) {
+                sh '''
+                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
-                            aws eks update-kubeconfig \
-                                --region us-east-1 \
-                                --name "$K8S_CLUSTER_NAME" \
-                                --alias "$K8S_CLUSTER_NAME" \
-                                --kubeconfig /tmp/kubeconfig
+                    aws eks update-kubeconfig \
+                        --region us-east-1 \
+                        --name "$K8S_CLUSTER_NAME" \
+                        --alias "$K8S_CLUSTER_NAME" \
+                        --kubeconfig /tmp/kubeconfig
 
-                            export KUBECONFIG=/tmp/kubeconfig
-                            kubectl version --short
-                        '''
-                    }
-                }
+                    export KUBECONFIG=/tmp/kubeconfig
+                    kubectl version   # <-- CORREGIDO aquí, sin --short
+                '''
             }
         }
+    }
+}
+
 
         stage('Deploy Resources') {
             steps {
