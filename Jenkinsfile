@@ -113,11 +113,15 @@ spec:
                                 --name "$K8S_CLUSTER_NAME" \
                                 --alias "$K8S_CLUSTER_NAME" \
                                 --kubeconfig /tmp/kubeconfig
-
-                            export KUBECONFIG=/tmp/kubeconfig
-                            kubectl version --short
                         '''
                     }
+                }
+
+                container('kubectl') {
+                    sh '''
+                        export KUBECONFIG=/tmp/kubeconfig
+                        kubectl version --short
+                    '''
                 }
             }
         }
