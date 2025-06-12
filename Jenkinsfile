@@ -120,8 +120,8 @@ spec:
                 container('kube-aws') {
                     sh '''
                         export KUBECONFIG=/tmp/kubeconfig
-                        kubectl apply -f deployment-cluster/deployment.yaml
-                        kubectl apply -f deployment-cluster/service.yaml
+                        kubectl apply -f microservice/hello-world/deployment.yaml
+                        kubectl apply -f microservice/hello-world/service.yaml
                     '''
                 }
             }
