@@ -1,59 +1,8 @@
 pipeline {
     agent {
         kubernetes {
-            label "hello-world-pipeline"
-            defaultContainer 'jnlp'
             inheritFrom 'hello-world-agent'
-            yaml """
-apiVersion: v1
-kind: Pod
-spec:
-  serviceAccountName: jenkins
-  containers:
-    - name: docker
-      image: docker:24.0.2
-      command: ["cat"]
-      tty: true
-      securityContext:
-        privileged: true
-      env:
-        - name: DOCKER_HOST
-          value: tcp://localhost:2375
-        - name: DOCKER_TLS_CERTDIR
-          value: ""
-      volumeMounts:
-        - name: docker-graph-storage
-          mountPath: /var/lib/docker
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
-
-    - name: docker-dind
-      image: docker:24.0.2-dind
-      securityContext:
-        privileged: true
-      env:
-        - name: DOCKER_TLS_CERTDIR
-          value: ""
-      volumeMounts:
-        - name: docker-graph-storage
-          mountPath: /var/lib/docker
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
-
-    - name: kube-aws
-      image: kaido19/kube-aws:latest
-      command: ["/bin/sh", "-c", "sleep infinity"]
-      tty: true
-      volumeMounts:
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
-
-  volumes:
-    - name: docker-graph-storage
-      emptyDir: {}
-    - name: workspace-volume
-      emptyDir: {}
-"""
+            defaultContainer 'jnlp'
         }
     }
 
@@ -92,30 +41,29 @@ spec:
         }
 
         stage('Configure Kube Access') {
-    steps {
-        container('kube-aws') {
-            withCredentials([
-                usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
-            ]) {
-                sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+            steps {
+                container('kube-aws') {
+                    withCredentials([
+                        usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
+                        string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
+                    ]) {
+                        sh '''
+                            export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                            export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
 
-                    aws eks update-kubeconfig \
-                        --region us-east-1 \
-                        --name "$K8S_CLUSTER_NAME" \
-                        --alias "$K8S_CLUSTER_NAME" \
-                        --kubeconfig /tmp/kubeconfig
+                            aws eks update-kubeconfig \
+                                --region us-east-1 \
+                                --name "$K8S_CLUSTER_NAME" \
+                                --alias "$K8S_CLUSTER_NAME" \
+                                --kubeconfig /tmp/kubeconfig
 
-                    export KUBECONFIG=/tmp/kubeconfig
-                    kubectl version   # <-- CORREGIDO aquí, sin --short
-                '''
+                            export KUBECONFIG=/tmp/kubeconfig
+                            kubectl version
+                        '''
+                    }
+                }
             }
         }
-    }
-}
-
 
         stage('Deploy Resources') {
             steps {
