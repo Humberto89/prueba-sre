@@ -102,7 +102,6 @@ spec:
                 container('awscli') {
                     withCredentials([
                         usernamePassword(credentialsId: 'aws-creds', usernameVariable: 'AWS_ACCESS_KEY_ID', passwordVariable: 'AWS_SECRET_ACCESS_KEY'),
-                        string(credentialsId: 'k8s-api-url', variable: 'K8S_API_URL'),
                         string(credentialsId: 'k8s-cluster-name', variable: 'K8S_CLUSTER_NAME')
                     ]) {
                         sh '''
@@ -113,8 +112,10 @@ spec:
                                 --region us-east-1 \
                                 --name "$K8S_CLUSTER_NAME" \
                                 --alias "$K8S_CLUSTER_NAME" \
-                                --kubeconfig /tmp/kubeconfig \
-                                --endpoint-url "$K8S_API_URL"
+                                --kubeconfig /tmp/kubeconfig
+
+                            export KUBECONFIG=/tmp/kubeconfig
+                            kubectl version --short
                         '''
                     }
                 }
