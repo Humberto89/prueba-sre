@@ -39,8 +39,11 @@ spec:
           mountPath: /home/jenkins/agent
 
     - name: kubectl
-      image: bitnami/kubectl:latest
-      command: ["cat"]
+      image: lachlanevenson/k8s-kubectl:v1.29.0
+      command:
+        - /bin/sh
+        - -c
+        - "sleep infinity"
       tty: true
       volumeMounts:
         - name: workspace-volume
