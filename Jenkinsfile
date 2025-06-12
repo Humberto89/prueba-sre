@@ -40,10 +40,10 @@ pipeline {
             steps {
                 container('docker') {
                     sh '''
-                       export DOCKER_HOST=tcp://localhost:2375
-                       chmod +x wait-for-dind.sh
-                       ./wait-for-dind.sh
-                       docker build -t ${IMAGE_NAME} microservice/hello-world
+                        export DOCKER_HOST=tcp://localhost:2375
+                        chmod +x wait-for-dind.sh
+                        ./wait-for-dind.sh
+                        docker build -t ${IMAGE_NAME} microservice/hello-world
                     '''
                 }
             }
@@ -93,8 +93,8 @@ pipeline {
                 container('kube-aws') {
                     sh '''
                         export KUBECONFIG=/tmp/kubeconfig
-                        kubectl apply -f microservice/hello-world/deployment.yaml
-                        kubectl apply -f microservice/hello-world/service.yaml
+                        kubectl apply -f microservice/hello-world/deployment.yaml -n dev
+                        kubectl apply -f microservice/hello-world/service.yaml -n dev
                     '''
                 }
             }
@@ -105,8 +105,8 @@ pipeline {
                 container('kube-aws') {
                     sh '''
                         export KUBECONFIG=/tmp/kubeconfig
-                        kubectl rollout status deployment/hello-world
-                        kubectl get all
+                        kubectl rollout status deployment/hello-world -n dev
+                        kubectl get all -n dev
                     '''
                 }
             }
