@@ -19,6 +19,23 @@ pipeline {
             }
         }
 
+        stage('Validate Docker Daemon') {
+            steps {
+                container('docker') {
+                    sh '''
+                        echo "✅ Comprobando si el Docker daemon está activo en localhost:2375..."
+                        export DOCKER_HOST=tcp://localhost:2375
+
+                        echo "🔍 Ejecutando curl para validar la conexión..."
+                        curl -s localhost:2375/version || echo "❌ No se pudo conectar al daemon Docker"
+
+                        echo "🏁 Resultado de docker info directo (esperado: error si no está listo):"
+                        docker info || echo "❌ docker info falló, daemon no disponible"
+                    '''
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 container('docker') {
@@ -36,8 +53,11 @@ pipeline {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: 'dockercred', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                        sh "docker push ${env.IMAGE_NAME}"
+                        sh '''
+                            export DOCKER_HOST=tcp://localhost:2375
+                            echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
+                            docker push ${IMAGE_NAME}
+                        '''
                     }
                 }
             }
