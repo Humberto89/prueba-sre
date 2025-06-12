@@ -22,9 +22,12 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    sh 'chmod +x wait-for-dind.sh'
-                    sh './wait-for-dind.sh'
-                    sh "docker build -t ${env.IMAGE_NAME} microservice/hello-world"
+                    sh '''
+                       export DOCKER_HOST=tcp://localhost:2375
+                       chmod +x wait-for-dind.sh
+                       ./wait-for-dind.sh
+                       docker build -t ${IMAGE_NAME} microservice/hello-world
+                    '''
                 }
             }
         }
