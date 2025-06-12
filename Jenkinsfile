@@ -7,6 +7,7 @@ pipeline {
 apiVersion: v1
 kind: Pod
 spec:
+  serviceAccountName: jenkins
   containers:
     - name: docker
       image: docker:24.0.2
