@@ -14,9 +14,8 @@ spec:
         app: hello-world
     spec:
       containers:
-      - name: hello-world
-        image: hashicorp/http-echo
-        args:
-          - "-text=Hello World from EKS 👋"
-        ports:
-          - containerPort: 5678
+        - name: hello-world
+          image: kaido19/hello-world:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5678
